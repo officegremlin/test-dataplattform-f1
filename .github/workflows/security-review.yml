@@ -1,0 +1,57 @@
+# GitHub Actions Workflow: Security Review
+#
+# This workflow automates security review for commits and pull requests in your repository. It helps ensure the safety and integrity
+# of your codebase by performing the following tasks:
+#
+#   1. Checks for high-severity vulnerabilities in your project's dependencies.
+#   2. Provides a summary of security findings as comments in the pull request.
+#   3. Enforces license checks on your project's dependencies.
+#
+# By using this workflow, you can:
+#   - Identify and address security vulnerabilities early in the development process.
+#   - Keep your project's dependencies in compliance with licensing requirements.
+#   - Streamline your development workflow by automating security checks.
+#
+# For more information on how to set up and customize this workflow, refer to the documentation
+# of the 'dependency-review-action' used in this workflow: https://github.com/actions/dependency-review-action
+#
+# Note: Make sure to review and adjust the workflow configuration to suit your project's needs.
+#
+# Author: Dataplatform team
+# Created: Monday Nov 27th 2023
+
+name: 'Security Review'
+on:
+  push:
+    paths:
+      - '.github/workflows/security-review.yml'
+    branches: [main]
+
+  pull_request:
+    paths:
+      - '.github/workflows/security-review.yml'
+    branches: [main]
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  security-review:
+    runs-on: sb1u
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+
+      - name: 'Security Review'
+        uses: actions/dependency-review-action@v4
+        with:
+          head-ref: ${{ github.sha }}
+          base-ref: main
+          fail-on-severity: high
+          comment-summary-in-pr: always
+          license-check: true
+          # Ignore missing license warning for 'dope-client' package since it is internal to Sparebank 1.
+          allow-dependencies-licenses: pkg:pypi/dope-client

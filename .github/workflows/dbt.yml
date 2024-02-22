@@ -1,0 +1,80 @@
+ # This is a sample file for GitHub Actions.
+# The following GitHub Actions workflow automates the deployment of data pipelines using DBT and Dope CLI.
+
+name: "Run DBT"                                 # Give your workflow a descriptive name.
+
+on:
+  push:
+    paths:
+      - "dbt/**"                                # Trigger the workflow on changes to files under the 'dbt' directory.
+      - ".github/workflows/dbt.yml"             # Trigger the workflow on changes to this workflow file.
+    branches: [main]                            # Only run this workflow on the 'main' branch.
+  pull_request:
+    paths:
+      - "dbt/**"                                # Trigger the workflow on changes to files under the 'dbt' directory in pull requests.
+      - ".github/workflows/github_actions.yml"  # Trigger the workflow on changes to this workflow file in pull requests.
+    branches: [main]                            # Only run this workflow on the 'main' branch in pull requests.
+  workflow_dispatch:                            # Allow manual triggering of the workflow, and it can be triggered from other workflows
+
+permissions:                                    # Define permissions for this workflow.
+  contents: read                                # This allows the workflow to read/checkout the source code from GitHub
+  id-token: write                               # Grant access to authenticate with Hashicorp Vault. Needed to log in to Snowflake
+
+
+jobs:
+  DBT_Run:
+    runs-on: sb1u                                        # Always keep this part: It specifies the private runner environment where the job will run.
+
+    steps:
+      - name: Checkout                                                          # Checkout the repository code.
+        uses: actions/checkout@v4
+
+      - name: Set SHA shortform for use in workspace name                       # Calculate and set a short SHA for use later in workspace naming.
+        id: vars
+        run: |
+          calculatedSha=$(git rev-parse --short  ${{ github.sha }})
+          echo "COMMIT_SHORT_SHA=$calculatedSha" >> $GITHUB_ENV
+
+
+      - name: Login with Dope CLI                                               # Use Dope CLI action to log in.
+        uses: sparebank1utvikling/dope-client@0.24.0
+        with:
+          dope-command: login --no-interactive
+
+      - name: Create a new workspace unique to the current commit               # Create a new workspace for the current commit.
+        uses: sparebank1utvikling/dope-client@0.24.0
+        with:
+          dope-command: workspace set ${{ env.COMMIT_SHORT_SHA }}
+
+      - name: Clone the production database to the new workspace                # Clone the production database to the new workspace.
+        id: db-clone
+        uses: sparebank1utvikling/dope-client@0.24.0
+        with:
+          dope-command: workspace clone
+
+      - name: List workspaces                                                   # List the available workspaces.
+        uses: sparebank1utvikling/dope-client@0.24.0
+        with:
+          dope-command: workspace list
+
+
+      - name: Install poetry and dbt                                            # Use a bash shell to install poetry and dbt for use later.
+        shell: bash
+        run: |
+          pip install poetry dbt
+          poetry install --no-root
+
+      - name: Run DBT pipeline                                                  # Use a bash shell for the following steps.
+        shell: bash
+        run: |
+          cd dbt
+          export DBT_PROFILES_DIR="$HOME/.dope_env/snowflake"
+          poetry run dbt deps                                                   # Install DBT dependencies.
+          poetry run dbt debug                                                  # Debug DBT project.
+          poetry run dbt run                                                    # Run DBT pipeline.
+
+      - name: Remove workspace before closing                                   # Remove the workspace after a successful run.
+        uses: sparebank1utvikling/dope-client@0.24.0
+        if: steps.db-clone.outcome == 'success'
+        with:
+          dope-command: workspace remove ${{ env.COMMIT_SHORT_SHA }} --auto-approve

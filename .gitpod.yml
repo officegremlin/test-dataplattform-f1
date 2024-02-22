@@ -1,0 +1,18 @@
+image: img.plattform.dataplattform.sparebank1.no/dp-full:v0
+
+tasks:
+  - name: install
+    command: |
+      pre-commit install && pre-commit run
+      poetry install --no-root
+      exit
+
+  - name: dope
+    before: |
+      dope --help
+
+vscode:
+  extensions:
+    - ms-python.python
+    - ms-pyright.pyright
+    - ms-azuretools.vscode-docker

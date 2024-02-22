@@ -1,0 +1,52 @@
+# Generic metadata about this project
+# config ref: https://docs.prefect.io/latest/guides/prefect-deploy/#schedule-fields
+name: prefect
+prefect-version: 2.14.4
+
+definitions:
+  docker_build: &docker_build
+  - prefect_docker.deployments.steps.build_docker_image:
+      id: build-image
+      requires: prefect-docker>=0.4.1
+      image_name: '{{ prefect.variables.test_dataplattform_f1_image_name }}'
+      tag: latest
+  docker_push: &docker_push
+  - prefect_docker.deployments.steps.push_docker_image:
+      requires: prefect-docker>=0.4.1
+      image_name: '{{ build-image.image_name }}'
+      tag: '{{ build-image.tag }}'
+  docker_pull: &docker_pull
+  - prefect.deployments.steps.set_working_directory:
+      directory: /opt/prefect
+  work_pool: &work_pool
+    name: test-dataplattform-f1
+    work_queue_name:
+    job_variables:
+      image: '{{ build-image.image }}'
+      image_pull_policy: Always
+  schedules:
+    daily: &daily
+      interval: 86400
+    hourly: &hourly
+      interval: 3600
+
+# the deployments section allows you to provide configuration for deploying flows
+deployments:
+  - name: "test-dataplattform-f1-hello-dbt"
+    version:
+    description:
+    entrypoint: flows/hello_dbt.py:hello_dbt
+    build: *docker_build
+    pull: *docker_pull
+    push: *docker_push
+    work_pool: *work_pool
+
+  - name: "test-dataplattform-f1-snowflake-query"
+    version:
+    description:
+    entrypoint: flows/hello_snowflake_query.py:hello_snowflake_query
+    parameters:
+    build: *docker_build
+    pull: *docker_pull
+    push: *docker_push
+    work_pool: *work_pool

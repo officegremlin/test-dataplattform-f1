@@ -1,0 +1,3 @@
+packages:
+  - name: dope_dbt_macros
+    tarball: https://nexus.intern.sparebank1.no/repository/raw_repository/dbt_packages/dope_dbt_macros/dope_dbt_macros-0.2.0.tar.gz

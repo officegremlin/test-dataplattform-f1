@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "test-dataplattform-f1"
+version = "0.1.0"
+description = ""
+authors = ["officegremlin <fredrik.lundquist@sparebank1.no>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+dope-client = ">=0.24.0"
+dbt-core = "^1.7.2"
+dbt-snowflake = "^1.6.4"
+prefect = "^2.14.4"
+prefect-dbt = "^0.4.0"
+
+[[tool.poetry.source]]
+name = "nexus"
+url = "https://nexus.intern.sparebank1.no/repository/pypi-group-packages/simple"
+priority = "default"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

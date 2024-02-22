@@ -1,0 +1,4 @@
+# Use this template to update your config for this project.
+project_name = "test-dataplattform-f1"     #[Required] Full project name as selected in project registration
+dbt_root = "dbt"            #[Required] Path to the dbt project
+#snowflake_prefix = ""                                     #[Optional] Prefix for Snowflake databases. Will be used instead of project_name if set. Note that this also needs to be added as a dbt project variable.

@@ -1,0 +1,40 @@
+name: "Deploy: prefect non-prod"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: 'prefect-deploy-${{ github.ref }}-dev'
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: dope login
+        uses: sparebank1utvikling/dope-client@main
+        with:
+          dope-command: login --no-interactive
+      - name: Install dependencies
+        run: |
+          export POETRY_VIRTUALENVS_CREATE=false
+          pip install poetry
+          poetry install --no-root
+
+      - name: Prefect deploy
+        run: |
+          prefect --no-prompt deploy --name test-dataplattform-f1-hello-dbt --params '{"environment": "non_prod", "workspace_name": "NON_PROD"}'
+          prefect --no-prompt deploy --name test-dataplattform-f1-hello-snowflake-query --params '{"environment": "non_prod"}'
+
+          prefect deployment run 'hello-dbt/test-dataplattform-f1-hello-dbt' --params '{"environment": "non_prod", "workspace_name": "NON_PROD"}'
+          prefect deployment run 'hello-snowflake-query/test-dataplattform-f1-hello-snowflake-query' --params '{"environment": "non_prod"}'
