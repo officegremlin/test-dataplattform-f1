@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: ssb
+    database: TEST_DATAPLATTFORM_F1__PROD__FREDRIK_TEST
+    schema: public
+    tables:
+      - name: SSB_ARBEIDSLEDIGE_13MND

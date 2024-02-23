@@ -41,7 +41,5 @@ dispatch:
 # as tables. These settings can be overridden in the individual model files
 # using macros.
 models:
-  hello:
-    # Config indicated by + and applies to all files under models/example/
-    example:
-      +materialized: view
+  staging:
+    +materialized: table
